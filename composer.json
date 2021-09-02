@@ -1,0 +1,33 @@
+{
+    "name": "parallax/inertia-statamic-adapter",
+    "type": "project",
+    "description": "Inertia.js adapter for Statamic",
+    "keywords": ["laravel", "inertiajs", "statamic"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Luke Youell",
+            "email": "luke@parall.ax"
+        }
+    ],
+    "require": {
+        "php": "^7.3|^8.0",
+        "inertiajs/inertia-laravel": "^0.4",
+        "statamic/cms": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Parallax\\InertiaStatamicAdapter\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Parallax\\InertiaStatamicAdapter\\Providers\\ServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
