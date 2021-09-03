@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use JsonSerializable;
 use Statamic\Entries\Entry;
+use Statamic\Facades\GlobalSet as GlobalSetFacade;
 use Statamic\Fields\Value;
+use Statamic\Globals\GlobalSet;
 use Statamic\Http\Controllers\FrontendController;
 use Statamic\Structures\Page;
 
@@ -58,17 +60,31 @@ class InertiaStatamicAdapter
 
     protected function props($data)
     {
+        $globals = GlobalSetFacade::all();
+
+        return [
+            'entry' => $this->formatPropData($data),
+            'globals' => $this->formatPropData($globals)
+        ];
+    }
+
+    protected function formatPropData($data)
+    {
         if ($data instanceof Carbon) {
             return $data;
         }
 
         if ($data instanceof JsonSerializable || $data instanceof Collection) {
-            return $this->buildProps($data->jsonSerialize());
+            return $this->formatPropData($data->jsonSerialize());
+        }
+
+        if ($data instanceof GlobalSet) {
+            $this->formatPropData($data->localizations()->get('default'));
         }
 
         if (is_array($data)) {
             return collect($data)->map(function ($value) {
-                return $this->buildProps($value);
+                return $this->formatPropData($value);
             })->all();
         }
 
@@ -77,7 +93,7 @@ class InertiaStatamicAdapter
         }
 
         if (is_object($data) && method_exists($data, 'toAugmentedArray')) {
-            return $this->buildProps($data->toAugmentedArray());
+            return $this->formatPropData($data->toAugmentedArray());
         }
 
         return $data;
