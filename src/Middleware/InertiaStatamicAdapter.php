@@ -1,6 +1,6 @@
 <?php
 
-namespace Parallax\InertiaStatamicAdapter\Middleware;
+namespace App\Http\Middleware;
 
 use Carbon\Carbon;
 use Closure;
@@ -12,39 +12,35 @@ use JsonSerializable;
 use Statamic\Entries\Entry;
 use Statamic\Facades\GlobalSet as GlobalSetFacade;
 use Statamic\Fields\Value;
+use Statamic\Globals\GlobalCollection;
 use Statamic\Globals\GlobalSet;
 use Statamic\Http\Controllers\FrontendController;
 use Statamic\Structures\Page;
 
 class InertiaStatamicAdapter
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return \Inertia\Response|mixed
-     */
+    protected $data;
+
     public function handle(Request $request, Closure $next)
     {
         $page = app(FrontendController::class)->index($request);
 
+        $this->data = $page->toAugmentedArray();
+
         if ($page instanceof Page || $page instanceof Entry) {
             return Inertia::render(
-                $this->componentPath($page),
-                $this->props($page)
+                $this->buildComponentPath($page),
+                $this->buildProps($page),
             );
         }
 
         return $next($request);
     }
 
-    protected function componentPath($data)
-    {
-        $values = $data->toAugmentedArray();
-        
-        $collection = $values['collection']->toAugmentedArray();
-        $blueprint = $values['blueprint']->toAugmentedArray();
+    protected function buildComponentPath()
+    {        
+        $collection = $this->data['collection']->toAugmentedArray();
+        $blueprint = $this->data['blueprint']->toAugmentedArray();
 
         $path = collect([
             $collection['handle'],
@@ -58,14 +54,26 @@ class InertiaStatamicAdapter
         return $path->join('/');
     }
 
-    protected function props($data)
+    protected function buildProps()
+    {
+        return [
+            'entry' => $this->buildEntryProps(),
+            'globals' => $this->buildGlobalProps(),
+        ];
+    }
+
+    protected function buildEntryProps()
+    {
+        return $this->formatPropData($this->data);
+    }
+
+    protected function buildGlobalProps()
     {
         $globals = GlobalSetFacade::all();
 
-        return [
-            'entry' => $this->formatPropData($data),
-            'globals' => $this->formatPropData($globals)
-        ];
+        return collect($globals)->mapWithKeys(function ($global) {
+            return [$global->handle() => $this->formatPropData($global)];
+        })->toArray();
     }
 
     protected function formatPropData($data)
@@ -79,7 +87,7 @@ class InertiaStatamicAdapter
         }
 
         if ($data instanceof GlobalSet) {
-            $this->formatPropData($data->localizations()->get('default'));
+            return $this->formatPropData($data->localizations()->get('default'));
         }
 
         if (is_array($data)) {
