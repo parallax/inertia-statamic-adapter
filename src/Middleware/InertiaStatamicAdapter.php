@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Parallax\InertiaStatamicAdapter\Middleware;
 
 use Carbon\Carbon;
 use Closure;
