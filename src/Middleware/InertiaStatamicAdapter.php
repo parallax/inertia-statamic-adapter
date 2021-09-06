@@ -29,8 +29,8 @@ class InertiaStatamicAdapter
 
         if ($page instanceof Page || $page instanceof Entry) {
             return Inertia::render(
-                $this->buildComponentPath($page),
-                $this->buildProps($page),
+                $this->buildComponentPath(),
+                $this->buildProps(),
             );
         }
 
